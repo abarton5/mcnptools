@@ -3,12 +3,12 @@
 
 namespace mcnptools {
 
-PtracEvent::PtracEvent(int type, const std::map<int,double>& data):
+PtracEvent::PtracEvent(int type, const std::flat_map<int,double>& data):
   m_type(type),
   m_data(data)
 {}
 
-PtracEvent::PtracEvent(int type, std::map<int,double>&& data):
+PtracEvent::PtracEvent(int type, std::flat_map<int,double>&& data):
   m_type(type),
   m_data( std::move(data) )
 {}
@@ -31,7 +31,7 @@ int PtracEvent::BankType() const {
   }
 }
 
-bool PtracEvent::Has(const int& d) const {
+bool PtracEvent::Has(const int d) const {
   bool retval = false;
   if( m_data.find( d ) != m_data.end() )
     retval = true;
@@ -39,7 +39,7 @@ bool PtracEvent::Has(const int& d) const {
   return retval;
 }
 
-double PtracEvent::Get(const int& d) const {
+double PtracEvent::Get(const int d) const {
   return m_data.at(d);
 }
 

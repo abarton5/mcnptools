@@ -1,6 +1,6 @@
 add_library(mcnptools "")
 add_library(mcnptools::mcnptools ALIAS mcnptools)
-target_compile_features(mcnptools PUBLIC cxx_std_11)
+target_compile_features(mcnptools PUBLIC cxx_std_23)
 set_target_properties(mcnptools PROPERTIES 
   CXX_EXTENSIONS ${mcnptools.cxx_extensions}
   POSITION_INDEPENDENT_CODE ${mcnptools.PIC}

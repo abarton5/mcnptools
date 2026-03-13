@@ -1,6 +1,6 @@
 #include <cassert>
 #include <string>
-
+#include <format>
 #include "mcnptools/Ptrac.hpp"
 
 #include "mcnptools/StringOps.hpp"
@@ -23,17 +23,13 @@ Ptrac::Ptrac(const std::string& filename, const unsigned int format):
     if( format == Ptrac::BIN_PTRAC ) {
       m_handle.open(filename.c_str(), std::ifstream::binary);
       if (m_handle.fail()) {
-        std::stringstream ss;
-        ss << "Failed to open binary PTRAC file " << filename;
-        throw McnpToolsException( ss.str() );
+        throw McnpToolsException( std::format("Failed to open binary PTRAC file ", filename));
       }
     }
     else { //ASCII format 
       m_handle.open(filename.c_str());
       if (m_handle.fail()) {
-        std::stringstream ss;
-        ss << "Failed to open ASCII PTRAC file " << filename;
-        throw McnpToolsException( ss.str() );
+        throw McnpToolsException( std::format("Failed to open ASCII PTRAC file {}",filename) );
       }
     }
     ReadHeader();
@@ -53,18 +49,14 @@ void Ptrac::ReadHeader() {
     m_handle.read( (char*) &size1, sizeof(int) );
 
     if( size1 >= fsize || size1 != sizeof(int) ) {
-      std::stringstream ss;
-      ss << "Failed to read binary PTRAC";
-      throw McnpToolsException( ss.str() );
+      throw McnpToolsException( "Failed to read binary PTRAC" );
     }
 
     m_handle.read( (char*) &m_version, size1);
     m_handle.read( (char*) &size2, sizeof(int) );
 
     if( size1 != size2 || m_version != -1 ) {
-      std::stringstream ss;
-      ss << "Failed to read binary PTRAC";
-      throw McnpToolsException( ss.str() );
+      throw McnpToolsException( "Failed to read binary PTRAC" );
     }
 
     // read the code data 
@@ -99,9 +91,7 @@ void Ptrac::ReadHeader() {
     m_handle.read( (char*) &size2, sizeof(int) );
 
     if( size1 != size2 ) {
-      std::stringstream ss;
-      ss << "Failed to read binary PTRAC";
-      throw McnpToolsException( ss.str() );
+      throw McnpToolsException( "Failed to read binary PTRAC" );
     }
 
     // read the keyword entries
@@ -134,9 +124,7 @@ void Ptrac::ReadHeader() {
       m_handle.read( (char*) &size2, sizeof(int) );
 
       if( size1 != size2 ) {
-        std::stringstream ss;
-        ss << "Failed to read binary PTRAC";
-        throw McnpToolsException( ss.str() );
+        throw McnpToolsException( "Failed to read binary PTRAC" );
       }
 
       if( nkwcnt >= nkw )
@@ -178,9 +166,7 @@ void Ptrac::ReadHeader() {
     m_handle.read( (char*) &size2, sizeof(int) );
     
     if( size1 != size2 ) {
-      std::stringstream ss;
-      ss << "Failed to read binary PTRAC";
-      throw McnpToolsException( ss.str() );
+      throw McnpToolsException( "Failed to read binary PTRAC" );
     }
 
     // read data types
@@ -204,9 +190,7 @@ void Ptrac::ReadHeader() {
     m_handle.read( (char*) &size2, sizeof(int) );
 
     if( size1 != size2 ) {
-      std::stringstream ss;
-      ss << "Failed to read binary PTRAC";
-      throw McnpToolsException( ss.str() );
+      throw McnpToolsException( "Failed to read binary PTRAC" );
     }
 
   }
@@ -275,17 +259,17 @@ void Ptrac::ReadHeader() {
       m_handle >> unused[i];
     }
 
-    m_nument.insert( std::pair<std::string, int64_t>( "nps", nnps ) );
-    m_nument.insert( std::pair<std::string, int64_t>( "src1", nsrc1 ) );
-    m_nument.insert( std::pair<std::string, int64_t>( "src2", nsrc2 ) );
-    m_nument.insert( std::pair<std::string, int64_t>( "bnk1", nbnk1 ) );
-    m_nument.insert( std::pair<std::string, int64_t>( "bnk2", nbnk2 ) );
-    m_nument.insert( std::pair<std::string, int64_t>( "sur1", nsur1 ) );
-    m_nument.insert( std::pair<std::string, int64_t>( "sur2", nsur2 ) );
-    m_nument.insert( std::pair<std::string, int64_t>( "col1", ncol1 ) );
-    m_nument.insert( std::pair<std::string, int64_t>( "col2", ncol2 ) );
-    m_nument.insert( std::pair<std::string, int64_t>( "ter1", nter1 ) );
-    m_nument.insert( std::pair<std::string, int64_t>( "ter2", nter2 ) );
+    m_nument.emplace( "nps", nnps ) ;
+    m_nument.emplace( "src1", nsrc1  );
+    m_nument.emplace( "src2", nsrc2  );
+    m_nument.emplace( "bnk1", nbnk1  );
+    m_nument.emplace( "bnk2", nbnk2  );
+    m_nument.emplace( "sur1", nsur1  );
+    m_nument.emplace( "sur2", nsur2  );
+    m_nument.emplace( "col1", ncol1  );
+    m_nument.emplace( "col2", ncol2  );
+    m_nument.emplace( "ter1", nter1  );
+    m_nument.emplace( "ter2", nter2  );
 
     // read data types
 
@@ -350,9 +334,7 @@ PtracHistory Ptrac::ReadHistory() {
     ReadValue(size2);
 
     if( size1 != size2 ) {
-      std::stringstream ss;
-      ss << "Failed to read binary PTRAC";
-      throw McnpToolsException( ss.str() );
+      throw McnpToolsException( "Failed to read binary PTRAC" );
     }
   }
 
@@ -387,8 +369,10 @@ PtracHistory Ptrac::ReadHistory() {
     event.m_bnktype = bnk_type;
   
     std::vector<int> all_data_types;
-    all_data_types.insert(all_data_types.end(), m_datent[typestr + "1"].begin(), m_datent[typestr + "1"].end());
-    all_data_types.insert(all_data_types.end(), m_datent[typestr + "2"].begin(), m_datent[typestr + "2"].end());
+    auto &map1 =  m_datent[typestr + "1"];
+    auto &map2 =  m_datent[typestr + "2"];
+    all_data_types.insert(all_data_types.end(), map1.begin(), map1.end());
+    all_data_types.insert(all_data_types.end(), map2.begin(), map2.end());
   
     if( m_format == Ptrac::BIN_PTRAC) ReadValue(size1);
 
@@ -471,9 +455,7 @@ PtracHistory Ptrac::ReadHistory() {
       ReadValue(size2);
 
       if( size1 != size2 ) {
-        std::stringstream ss;
-        ss << "Failed to read binary PTRAC";
-        throw McnpToolsException( ss.str() );
+        throw McnpToolsException( "Failed to read binary PTRAC" );
       }
     }
 
@@ -507,7 +489,7 @@ std::vector<PtracHistory> Ptrac::ReadHistoriesLegacy(const unsigned int& num) {
 }
 
 
-std::vector<PtracHistory> Ptrac::ReadHistories(const unsigned int& num) {
+std::vector<PtracHistory> Ptrac::ReadHistories(const unsigned int num) {
   return (m_format == Ptrac::HDF5_PTRAC) ? m_hdf5_parser->ReadHistories( num ) :
                                            ReadHistoriesLegacy( num );
 }

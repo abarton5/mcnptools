@@ -98,7 +98,7 @@ class EventConverter
                   
     PtracEvent operator()(const Event & event) const
     {
-      std::map<int,double> data;
+      std::flat_map<int,double> data;
       for(const auto & accessor_pair : this->m_accessors) {
         auto result = accessor_pair.second( event );
         data.emplace(accessor_pair.first,

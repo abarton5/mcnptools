@@ -17,7 +17,7 @@ public:
 
   PtracNps GetNPS() const { return m_nps; }
   unsigned int GetNumEvents() const { return m_events.size(); } 
-  PtracEvent GetEvent(const unsigned int& i) const { return m_events.at(i); } 
+  const PtracEvent& GetEvent(const unsigned int i) const { return m_events.at(i); } 
 
 private:
   PtracNps m_nps;

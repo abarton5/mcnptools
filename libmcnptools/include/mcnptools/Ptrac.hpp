@@ -23,7 +23,7 @@ class Ptrac: public PtracEnums
 {
 public:
   Ptrac(const std::string& filename, const unsigned int format=Ptrac::BIN_PTRAC);
-  std::vector<PtracHistory> ReadHistories(const unsigned int& num);
+  std::vector<PtracHistory> ReadHistories(const unsigned int num);
 
 private:
 
@@ -63,8 +63,8 @@ private:
   std::string m_comment;
 
   static const std::vector<std::string> m_lines;
-  std::map<std::string, int64_t> m_nument;
-  std::map<std::string, std::vector<int> >  m_datent;
+  std::flat_map<std::string, int64_t> m_nument;
+  std::flat_map<std::string, std::vector<int> >  m_datent;
 
   //Parser for HDF5 Ptrac files.  We make it a pointer type because
   //legacy files will not be able to instantiate this parser
