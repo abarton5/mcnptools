@@ -295,6 +295,7 @@ PtracHistory Ptrac::ReadHistory() {
 
   PtracHistory hist;
   static_assert(std::is_nothrow_move_constructible<PtracHistory>::value);
+  static_assert(std::is_nothrow_move_constructible<PtracEvent>::value);
   // read the nps line
   double next_event_type;
   if( m_format == Ptrac::BIN_PTRAC ) ReadValue(size1);
@@ -376,10 +377,6 @@ PtracHistory Ptrac::ReadHistory() {
     all_data_types.insert(all_data_types.end(), map2.begin(), map2.end());
   
     if( m_format == Ptrac::BIN_PTRAC) ReadValue(size1);
-    std::vector<int>    keys;
-    std::vector<double> values;
-    keys.reserve(all_data_types.size());
-    values.reserve(all_data_types.size());
   
     for(unsigned int i=0; i<all_data_types.size(); i++) {
       double tmp;
@@ -411,8 +408,7 @@ PtracHistory Ptrac::ReadHistory() {
         case Ptrac::ENERGY:
         case Ptrac::WEIGHT:
         case Ptrac::TIME:
-          keys.emplace_back(all_data_types[i]);
-          values.emplace_back(tmp);
+          event.m_data.emplace(all_data_types[i], tmp);
           break;
       }
     }
@@ -424,7 +420,6 @@ PtracHistory Ptrac::ReadHistory() {
         throw McnpToolsException( "Failed to read binary PTRAC" );
       }
     }
-    event.m_data = std::flat_map<int, double>(std::move(keys), std::move(values));
     hist.m_events.push_back(std::move(event));
   }
 
