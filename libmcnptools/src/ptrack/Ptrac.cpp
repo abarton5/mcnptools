@@ -21,7 +21,7 @@ Ptrac::Ptrac(const std::string& filename, const unsigned int format):
     if( format == Ptrac::BIN_PTRAC ) {
       m_handle.open(filename.c_str(), std::ifstream::binary);
       if (m_handle.fail()) {
-        throw McnpToolsException( std::format("Failed to open binary PTRAC file ", filename));
+        throw McnpToolsException( std::format("Failed to open binary PTRAC file {}", filename));
       }
     }
     else { //ASCII format 
