@@ -7,8 +7,6 @@
 
 namespace mcnptools {
 
-const std::vector<std::string> Ptrac::m_lines = {"nps","src1","src2","bnk1","bnk2","sur1","sur2","col1","col2","ter1","ter2"};
-
 Ptrac::Ptrac(const std::string& filename, const unsigned int format):
   m_filename( filename ),
   m_format( static_cast<Ptrac::PtracFormat>(format) ) {
@@ -34,6 +32,15 @@ Ptrac::Ptrac(const std::string& filename, const unsigned int format):
     }
     ReadHeader();
   }
+}
+
+constexpr Ptrac::LineIndex GetBaseIndex(const std::string& type) {
+    if (type == "src") return Ptrac::IDX_SRC1;
+    if (type == "bnk") return Ptrac::IDX_BNK1;
+    if (type == "sur") return Ptrac::IDX_SUR1;
+    if (type == "col") return Ptrac::IDX_COL1;
+    if (type == "ter") return Ptrac::IDX_TER1;
+    return Ptrac::IDX_NPS;
 }
 
 void Ptrac::ReadHeader() {
@@ -151,17 +158,18 @@ void Ptrac::ReadHeader() {
     m_handle.read( (char*) &single_double, sizeof(int) );
     m_handle.read( (char*) &unused, sizeof(unused) );
 
-    m_nument.insert( std::pair<std::string, int64_t>( "nps", nnps ) );
-    m_nument.insert( std::pair<std::string, int64_t>( "src1", nsrc1 ) );
-    m_nument.insert( std::pair<std::string, int64_t>( "src2", nsrc2 ) );
-    m_nument.insert( std::pair<std::string, int64_t>( "bnk1", nbnk1 ) );
-    m_nument.insert( std::pair<std::string, int64_t>( "bnk2", nbnk2 ) );
-    m_nument.insert( std::pair<std::string, int64_t>( "sur1", nsur1 ) );
-    m_nument.insert( std::pair<std::string, int64_t>( "sur2", nsur2 ) );
-    m_nument.insert( std::pair<std::string, int64_t>( "col1", ncol1 ) );
-    m_nument.insert( std::pair<std::string, int64_t>( "col2", ncol2 ) );
-    m_nument.insert( std::pair<std::string, int64_t>( "ter1", nter1 ) );
-    m_nument.insert( std::pair<std::string, int64_t>( "ter2", nter2 ) );
+    m_nument[IDX_NPS] = nnps;
+    m_nument[IDX_SRC1] = nsrc1;
+    m_nument[IDX_SRC2] = nsrc2;
+    m_nument[IDX_BNK1] = nbnk2;
+    m_nument[IDX_BNK2] = nbnk1;
+    m_nument[IDX_SUR1] = nsur1;
+    m_nument[IDX_SUR2] = nsur2;
+    m_nument[IDX_COL1] = ncol1;
+    m_nument[IDX_COL2] = ncol2;
+    m_nument[IDX_TER1] = nter1;
+    m_nument[IDX_TER2] = nter2;
+
 
     m_handle.read( (char*) &size2, sizeof(int) );
     
@@ -172,17 +180,17 @@ void Ptrac::ReadHeader() {
     // read data types
     m_handle.read( (char*) &size1, sizeof(int) );
 
-    for(unsigned int i=0; i<m_lines.size(); i++) {
-      for(unsigned int j=0; j<m_nument[ m_lines[i] ]; j++) {
-        if( m_lines[i] == "nps" ) {
+    for(auto x : m_lines) {
+      for(unsigned int j=0; j<m_nument[ x ]; j++) {
+        if( x == IDX_NPS ) {
           int64_t tmp;
           m_handle.read( (char*) &tmp, sizeof(tmp) );
-          m_datent[ m_lines[i] ].push_back( tmp );
+          m_datent[ x ].push_back( tmp );
         }
         else {
           int tmp;
           m_handle.read( (char*) &tmp, sizeof(tmp) );
-          m_datent[ m_lines[i] ].push_back( tmp );
+          m_datent[ x ].push_back( tmp );
         }
       }
     }
@@ -259,31 +267,31 @@ void Ptrac::ReadHeader() {
       m_handle >> unused[i];
     }
 
-    m_nument.emplace( "nps", nnps ) ;
-    m_nument.emplace( "src1", nsrc1  );
-    m_nument.emplace( "src2", nsrc2  );
-    m_nument.emplace( "bnk1", nbnk1  );
-    m_nument.emplace( "bnk2", nbnk2  );
-    m_nument.emplace( "sur1", nsur1  );
-    m_nument.emplace( "sur2", nsur2  );
-    m_nument.emplace( "col1", ncol1  );
-    m_nument.emplace( "col2", ncol2  );
-    m_nument.emplace( "ter1", nter1  );
-    m_nument.emplace( "ter2", nter2  );
+    m_nument[IDX_NPS] = nnps;
+    m_nument[IDX_SRC1] = nsrc1;
+    m_nument[IDX_SRC2] = nsrc2;
+    m_nument[IDX_BNK1] = nbnk2;
+    m_nument[IDX_BNK2] = nbnk1;
+    m_nument[IDX_SUR1] = nsur1;
+    m_nument[IDX_SUR2] = nsur2;
+    m_nument[IDX_COL1] = ncol1;
+    m_nument[IDX_COL2] = ncol2;
+    m_nument[IDX_TER1] = nter1;
+    m_nument[IDX_TER2] = nter2;
 
     // read data types
 
-    for(unsigned int i=0; i<m_lines.size(); i++) {
-      for(unsigned int j=0; j<m_nument[ m_lines[i] ]; j++) {
-        if( m_lines[i] == "nps" ) {
+    for(auto x : m_lines) {
+      for(unsigned int j=0; j<m_nument[ x ]; j++) {
+        if( x == IDX_NPS ) {
           int64_t tmp;
           m_handle >> tmp;
-          m_datent[ m_lines[i] ].push_back( tmp );
+          m_datent[ IDX_NPS ].push_back( tmp );
         }
         else {
           int tmp;
           m_handle >> tmp;
-          m_datent[ m_lines[i] ].push_back( tmp );
+          m_datent[ x ].push_back( tmp );
         }
       }
     }
@@ -301,7 +309,7 @@ PtracHistory Ptrac::ReadHistory() {
   if( m_format == Ptrac::BIN_PTRAC ) ReadValue(size1);
 
   PtracNps nps;
-  for(unsigned int i=0; i<m_nument["nps"]; i++) {
+  for(unsigned int i=0; i<m_nument[IDX_NPS]; i++) {
     int64_t tmp;
 
     ReadValue(tmp);
@@ -309,7 +317,7 @@ PtracHistory Ptrac::ReadHistory() {
     if( ! m_handle.good() )
       return hist;
 
-    switch( m_datent["nps"][i] ) {
+    switch( m_datent[IDX_NPS][i] ) {
       case Ptrac::NPS:
         nps.m_nps = tmp;
         break;
@@ -340,28 +348,33 @@ PtracHistory Ptrac::ReadHistory() {
   }
 
   hist.m_nps = nps;
-
+  LineIndex typestr =static_cast<LineIndex>(999999);
+  LineIndex typestr2 =static_cast<LineIndex>(999999);
   // read the events
   while( (int) next_event_type != Ptrac::LST ) {
     int bnk_type = std::abs(static_cast<int>(next_event_type)) % 1000;
     next_event_type = std::abs(static_cast<int>(next_event_type)) - bnk_type;
 
-    std::string typestr;
     switch( (int) next_event_type ) {
       case Ptrac::SRC:
-        typestr = "src";
+        typestr = IDX_SRC1;
+        typestr2= IDX_SRC2;
         break;
       case Ptrac::BNK:
-        typestr = "bnk";
+        typestr = IDX_BNK1;
+        typestr2 = IDX_BNK2;
         break;
       case Ptrac::SUR:
-        typestr = "sur";
+        typestr = IDX_SUR1;
+        typestr2 = IDX_SUR2;
         break;
       case Ptrac::COL:
-        typestr = "col";
+        typestr = IDX_COL1;
+        typestr2 = IDX_COL2;
         break;
       case Ptrac::TER:
-        typestr = "ter";
+        typestr = IDX_TER1;
+        typestr2 = IDX_TER2;
         break;
     }
 
@@ -371,8 +384,8 @@ PtracHistory Ptrac::ReadHistory() {
   
     std::vector<int> all_data_types;
 
-    auto &map1 =  m_datent[typestr + "1"];
-    auto &map2 =  m_datent[typestr + "2"];
+    auto &map1 =  m_datent[typestr];
+    auto &map2 =  m_datent[typestr2];
     all_data_types.insert(all_data_types.end(), map1.begin(), map1.end());
     all_data_types.insert(all_data_types.end(), map2.begin(), map2.end());
   

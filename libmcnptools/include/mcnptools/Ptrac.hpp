@@ -25,6 +25,13 @@ public:
   Ptrac(const std::string& filename, const unsigned int format=Ptrac::BIN_PTRAC);
   std::vector<PtracHistory> ReadHistories(const unsigned int num);
 
+    enum LineIndex {
+        IDX_NPS = 0, IDX_SRC1, IDX_SRC2, IDX_BNK1, IDX_BNK2,
+        IDX_SUR1, IDX_SUR2, IDX_COL1, IDX_COL2, IDX_TER1, IDX_TER2,
+        LINE_COUNT
+    };
+
+
 private:
 
 #ifdef SWIG // Work around because swig strugles with decltype
@@ -62,9 +69,11 @@ private:
 
   std::string m_comment;
 
-  static const std::vector<std::string> m_lines;
-  std::flat_map<std::string, int64_t> m_nument;
-  std::flat_map<std::string, std::vector<int> >  m_datent;
+  //static const std::vector<std::string> m_lines;
+  static constexpr std::array<LineIndex, LINE_COUNT> m_lines{ Ptrac::IDX_NPS, Ptrac::IDX_SRC1, Ptrac::IDX_SRC2, Ptrac::IDX_BNK1, Ptrac::IDX_BNK2, Ptrac::IDX_SUR1,
+         Ptrac::IDX_SUR2, Ptrac::IDX_COL1, Ptrac::IDX_COL2, Ptrac::IDX_TER1, Ptrac::IDX_TER2 };
+  std::array<int64_t, LINE_COUNT> m_nument;
+  std::array<std::vector<int>, LINE_COUNT>  m_datent;
 
   //Parser for HDF5 Ptrac files.  We make it a pointer type because
   //legacy files will not be able to instantiate this parser
