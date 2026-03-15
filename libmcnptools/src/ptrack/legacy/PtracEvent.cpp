@@ -22,8 +22,8 @@ int PtracEvent::BankType() const {
     return m_bnktype;
   }
   //Look in the data map for the bank type, because HDF5 stores it there
-  else if ( m_data.find( PtracEnums::BANK_TYPE ) != m_data.end() ) {
-    return static_cast<int>( m_data.at(PtracEnums::BANK_TYPE) );
+  else if ( auto it = m_data.find( PtracEnums::BANK_TYPE ); it != m_data.end() ) {
+    return static_cast<int>( it->second );
   }
   else
   {

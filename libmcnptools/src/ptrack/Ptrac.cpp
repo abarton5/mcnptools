@@ -294,7 +294,7 @@ PtracHistory Ptrac::ReadHistory() {
   int size1, size2;
 
   PtracHistory hist;
-
+  static_assert(std::is_nothrow_move_constructible<PtracHistory>::value);
   // read the nps line
   double next_event_type;
   if( m_format == Ptrac::BIN_PTRAC ) ReadValue(size1);
@@ -369,13 +369,18 @@ PtracHistory Ptrac::ReadHistory() {
     event.m_bnktype = bnk_type;
   
     std::vector<int> all_data_types;
+
     auto &map1 =  m_datent[typestr + "1"];
     auto &map2 =  m_datent[typestr + "2"];
     all_data_types.insert(all_data_types.end(), map1.begin(), map1.end());
     all_data_types.insert(all_data_types.end(), map2.begin(), map2.end());
   
     if( m_format == Ptrac::BIN_PTRAC) ReadValue(size1);
-
+    std::vector<int>    keys;
+    std::vector<double> values;
+    keys.reserve(all_data_types.size());
+    values.reserve(all_data_types.size());
+  
     for(unsigned int i=0; i<all_data_types.size(); i++) {
       double tmp;
 
@@ -386,67 +391,28 @@ PtracHistory Ptrac::ReadHistory() {
           next_event_type = tmp;
           break;
         case Ptrac::NODE:
-          event.m_data[Ptrac::NODE] = tmp;
-          break;
         case Ptrac::NSR:
-          event.m_data[Ptrac::NSR] = tmp;
-          break;
         case Ptrac::ZAID:
-          event.m_data[Ptrac::ZAID] = tmp;
-          break;
         case Ptrac::RXN:
-          event.m_data[Ptrac::RXN] = tmp;
-          break;
         case Ptrac::SURFACE:
-          event.m_data[Ptrac::SURFACE] = tmp;
-          break;
         case Ptrac::ANGLE:
-          event.m_data[Ptrac::ANGLE] = tmp;
-          break;
         case Ptrac::TERMINATION_TYPE:
-          event.m_data[Ptrac::TERMINATION_TYPE] = tmp;
-          break;
         case Ptrac::BRANCH:
-          event.m_data[Ptrac::BRANCH] = tmp;
-          break;
         case Ptrac::PARTICLE:
-          event.m_data[Ptrac::PARTICLE] = tmp;
-          break;
         case Ptrac::CELL:
-          event.m_data[Ptrac::CELL] = tmp;
-          break;
         case Ptrac::MATERIAL:
-          event.m_data[Ptrac::MATERIAL] = tmp;
-          break;
         case Ptrac::COLLISION_NUMBER:
-          event.m_data[Ptrac::COLLISION_NUMBER] = tmp;
-          break;
         case Ptrac::X:
-          event.m_data[Ptrac::X] = tmp;
-          break;
         case Ptrac::Y:
-          event.m_data[Ptrac::Y] = tmp;
-          break;
         case Ptrac::Z:
-          event.m_data[Ptrac::Z] = tmp;
-          break;
         case Ptrac::U:
-          event.m_data[Ptrac::U] = tmp;
-          break;
         case Ptrac::V:
-          event.m_data[Ptrac::V] = tmp;
-          break;
         case Ptrac::W:
-          event.m_data[Ptrac::W] = tmp;
-          break;
         case Ptrac::ENERGY:
-          event.m_data[Ptrac::ENERGY] = tmp;
-          break;
         case Ptrac::WEIGHT:
-          event.m_data[Ptrac::WEIGHT] = tmp;
-          break;
         case Ptrac::TIME:
-          event.m_data[Ptrac::TIME] = tmp;
+          keys.emplace_back(all_data_types[i]);
+          values.emplace_back(tmp);
           break;
       }
     }
@@ -458,8 +424,8 @@ PtracHistory Ptrac::ReadHistory() {
         throw McnpToolsException( "Failed to read binary PTRAC" );
       }
     }
-
-    hist.m_events.push_back(event);
+    event.m_data = std::flat_map<int, double>(std::move(keys), std::move(values));
+    hist.m_events.push_back(std::move(event));
   }
 
   // make sure to read until end of line if ASCII
