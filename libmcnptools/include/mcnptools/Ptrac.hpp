@@ -74,6 +74,7 @@ private:
          Ptrac::IDX_SUR2, Ptrac::IDX_COL1, Ptrac::IDX_COL2, Ptrac::IDX_TER1, Ptrac::IDX_TER2 };
   std::array<int64_t, LINE_COUNT> m_nument;
   std::array<std::vector<int>, LINE_COUNT>  m_datent;
+  std::unordered_map<int, std::vector<int>> m_event_layouts;
 
   //Parser for HDF5 Ptrac files.  We make it a pointer type because
   //legacy files will not be able to instantiate this parser
@@ -81,7 +82,7 @@ private:
 
   void ReadHeader();
   PtracHistory ReadHistory();
-  std::vector<PtracHistory> ReadHistoriesLegacy(const unsigned int& num);
+  std::vector<PtracHistory> ReadHistoriesLegacy(const unsigned int num);
 
 };
 

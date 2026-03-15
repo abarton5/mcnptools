@@ -32,6 +32,21 @@ Ptrac::Ptrac(const std::string& filename, const unsigned int format):
     }
     ReadHeader();
   }
+
+  // --- NEW: Pre-calculate Event Data Layouts ---
+    auto merge_layout = [&](int event_type, LineIndex idx1, LineIndex idx2) {
+        std::vector<int> layout;
+        layout.reserve(m_datent[idx1].size() + m_datent[idx2].size());
+        layout.insert(layout.end(), m_datent[idx1].begin(), m_datent[idx1].end());
+        layout.insert(layout.end(), m_datent[idx2].begin(), m_datent[idx2].end());
+        m_event_layouts[event_type] = std::move(layout);
+    };
+
+    merge_layout(Ptrac::SRC, IDX_SRC1, IDX_SRC2);
+    merge_layout(Ptrac::BNK, IDX_BNK1, IDX_BNK2);
+    merge_layout(Ptrac::SUR, IDX_SUR1, IDX_SUR2);
+    merge_layout(Ptrac::COL, IDX_COL1, IDX_COL2);
+    merge_layout(Ptrac::TER, IDX_TER1, IDX_TER2);
 }
 
 constexpr Ptrac::LineIndex GetBaseIndex(const std::string& type) {
@@ -161,8 +176,8 @@ void Ptrac::ReadHeader() {
     m_nument[IDX_NPS] = nnps;
     m_nument[IDX_SRC1] = nsrc1;
     m_nument[IDX_SRC2] = nsrc2;
-    m_nument[IDX_BNK1] = nbnk2;
-    m_nument[IDX_BNK2] = nbnk1;
+    m_nument[IDX_BNK1] = nbnk1;
+    m_nument[IDX_BNK2] = nbnk2;
     m_nument[IDX_SUR1] = nsur1;
     m_nument[IDX_SUR2] = nsur2;
     m_nument[IDX_COL1] = ncol1;
@@ -270,8 +285,8 @@ void Ptrac::ReadHeader() {
     m_nument[IDX_NPS] = nnps;
     m_nument[IDX_SRC1] = nsrc1;
     m_nument[IDX_SRC2] = nsrc2;
-    m_nument[IDX_BNK1] = nbnk2;
-    m_nument[IDX_BNK2] = nbnk1;
+    m_nument[IDX_BNK1] = nbnk1;
+    m_nument[IDX_BNK2] = nbnk2;
     m_nument[IDX_SUR1] = nsur1;
     m_nument[IDX_SUR2] = nsur2;
     m_nument[IDX_COL1] = ncol1;
@@ -377,17 +392,14 @@ PtracHistory Ptrac::ReadHistory() {
         typestr2 = IDX_TER2;
         break;
     }
-
+    if(typestr == 999999){
+      throw McnpToolsException("Error parsing");
+    }
+    const std::vector<int>& all_data_types = m_event_layouts.at(next_event_type);
     PtracEvent event;
     event.m_type = next_event_type;
     event.m_bnktype = bnk_type;
   
-    std::vector<int> all_data_types;
-
-    auto &map1 =  m_datent[typestr];
-    auto &map2 =  m_datent[typestr2];
-    all_data_types.insert(all_data_types.end(), map1.begin(), map1.end());
-    all_data_types.insert(all_data_types.end(), map2.begin(), map2.end());
   
     if( m_format == Ptrac::BIN_PTRAC) ReadValue(size1);
   
@@ -445,9 +457,9 @@ PtracHistory Ptrac::ReadHistory() {
   return hist;
 }
 
-std::vector<PtracHistory> Ptrac::ReadHistoriesLegacy(const unsigned int& num) {
+std::vector<PtracHistory> Ptrac::ReadHistoriesLegacy(const unsigned int num) {
   std::vector<PtracHistory> retval;
-
+  retval.reserve(num);
   for(unsigned int i=0; i<num; i++) {
     m_handle.peek();
     if( !m_handle.eof() ) {
