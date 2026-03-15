@@ -1,3 +1,5 @@
+#include <ranges>
+
 #define ACCESSOR(variable) \
   [](auto && event) { return std::forward<decltype(event)>(event).variable; }
 
@@ -86,25 +88,43 @@ template<typename Event, typename AccessorMap>
 class EventConverter
 {
   private:
-    AccessorMap m_accessors;
+    std::vector<std::pair<typename AccessorMap::key_type, typename AccessorMap::mapped_type>> m_accessors;
     int m_type;
 
   public:
 
     EventConverter(AccessorMap&& map, int event_type):
-      m_accessors( std::move(map) ),
       m_type( event_type )
-    {}
+    {
+      m_accessors.reserve(map.size());
+      for (auto& p : map) {
+         m_accessors.emplace_back(p.first, std::move(p.second));
+      }
+      std::ranges::sort(m_accessors, {}, &decltype(m_accessors)::value_type::first);
+    }
                   
     PtracEvent operator()(const Event & event) const
     {
-      std::flat_map<int,double> data;
-      for(const auto & accessor_pair : this->m_accessors) {
-        auto result = accessor_pair.second( event );
-        data.emplace(accessor_pair.first,
-                     accessor_pair.second( event ) );
-      }
-      return {m_type, std::move(data)};
+    const auto n = m_accessors.size();          // works for any std::map / flat_map / vector-of-pairs etc.
+
+    std::vector<int>    keys;
+    std::vector<double> values;
+    keys.reserve(n);
+    values.reserve(n);
+
+    for (const auto& [key, accessor] : m_accessors) {
+        keys.push_back(key);
+        values.push_back(accessor(event));      // called only once
+    }
+
+    // This constructor is O(N) when the keys are already sorted + unique
+    std::flat_map<int, double> data(
+        std::sorted_unique,
+        std::move(keys),
+        std::move(values)
+    );
+
+    return {m_type, std::move(data)};
     }
 };
 
