@@ -324,6 +324,8 @@ PtracHistory Ptrac::ReadHistory() {
   if( m_format == Ptrac::BIN_PTRAC ) ReadValue(size1);
 
   PtracNps nps;
+  // Reuse a buffer for binary reads to avoid repeated heap allocations
+  std::vector<double> binary_buffer;
   for(unsigned int i=0; i<m_nument[IDX_NPS]; i++) {
     int64_t tmp;
 
@@ -363,81 +365,66 @@ PtracHistory Ptrac::ReadHistory() {
   }
 
   hist.m_nps = nps;
-  LineIndex typestr =static_cast<LineIndex>(999999);
-  LineIndex typestr2 =static_cast<LineIndex>(999999);
   // read the events
   while( (int) next_event_type != Ptrac::LST ) {
     int bnk_type = std::abs(static_cast<int>(next_event_type)) % 1000;
     next_event_type = std::abs(static_cast<int>(next_event_type)) - bnk_type;
 
-    switch( (int) next_event_type ) {
-      case Ptrac::SRC:
-        typestr = IDX_SRC1;
-        typestr2= IDX_SRC2;
-        break;
-      case Ptrac::BNK:
-        typestr = IDX_BNK1;
-        typestr2 = IDX_BNK2;
-        break;
-      case Ptrac::SUR:
-        typestr = IDX_SUR1;
-        typestr2 = IDX_SUR2;
-        break;
-      case Ptrac::COL:
-        typestr = IDX_COL1;
-        typestr2 = IDX_COL2;
-        break;
-      case Ptrac::TER:
-        typestr = IDX_TER1;
-        typestr2 = IDX_TER2;
-        break;
-    }
-    if(typestr == 999999){
-      throw McnpToolsException("Error parsing");
-    }
     const std::vector<int>& all_data_types = m_event_layouts.at(next_event_type);
     PtracEvent event;
     event.m_type = next_event_type;
     event.m_bnktype = bnk_type;
   
   
-    if( m_format == Ptrac::BIN_PTRAC) ReadValue(size1);
-  
-    for(unsigned int i=0; i<all_data_types.size(); i++) {
-      double tmp;
-
-      ReadValue(tmp);
-
-      switch( all_data_types[i] ) {
-        case Ptrac::NEXT_EVENT_TYPE:
-          next_event_type = tmp;
-          break;
-        case Ptrac::NODE:
-        case Ptrac::NSR:
-        case Ptrac::ZAID:
-        case Ptrac::RXN:
-        case Ptrac::SURFACE:
-        case Ptrac::ANGLE:
-        case Ptrac::TERMINATION_TYPE:
-        case Ptrac::BRANCH:
-        case Ptrac::PARTICLE:
-        case Ptrac::CELL:
-        case Ptrac::MATERIAL:
-        case Ptrac::COLLISION_NUMBER:
-        case Ptrac::X:
-        case Ptrac::Y:
-        case Ptrac::Z:
-        case Ptrac::U:
-        case Ptrac::V:
-        case Ptrac::W:
-        case Ptrac::ENERGY:
-        case Ptrac::WEIGHT:
-        case Ptrac::TIME:
-          event.m_data.emplace(all_data_types[i], tmp);
-          break;
+    if( m_format == Ptrac::BIN_PTRAC){
+      ReadValue(size1);
+      binary_buffer.resize(all_data_types.size());
+      m_handle.read(reinterpret_cast<char*>(binary_buffer.data()), all_data_types.size() * sizeof(double));
+      for (size_t i = 0; i < all_data_types.size(); ++i) {
+          double val = binary_buffer[i];
+          if (all_data_types[i] == Ptrac::NEXT_EVENT_TYPE) {
+              next_event_type = val;
+          } else {
+              event.m_data.emplace(all_data_types[i], val);
+          }
       }
+    } 
+    else{
+        for(unsigned int i=0; i<all_data_types.size(); i++) {
+          double tmp;
+    
+          ReadValue(tmp);
+    
+          switch( all_data_types[i] ) {
+            case Ptrac::NEXT_EVENT_TYPE:
+              next_event_type = tmp;
+              break;
+            case Ptrac::NODE:
+            case Ptrac::NSR:
+            case Ptrac::ZAID:
+            case Ptrac::RXN:
+            case Ptrac::SURFACE:
+            case Ptrac::ANGLE:
+            case Ptrac::TERMINATION_TYPE:
+            case Ptrac::BRANCH:
+            case Ptrac::PARTICLE:
+            case Ptrac::CELL:
+            case Ptrac::MATERIAL:
+            case Ptrac::COLLISION_NUMBER:
+            case Ptrac::X:
+            case Ptrac::Y:
+            case Ptrac::Z:
+            case Ptrac::U:
+            case Ptrac::V:
+            case Ptrac::W:
+            case Ptrac::ENERGY:
+            case Ptrac::WEIGHT:
+            case Ptrac::TIME:
+              event.m_data.emplace(all_data_types[i], tmp);
+              break;
+          }
+        }
     }
-
     if( m_format == Ptrac::BIN_PTRAC ) {
       ReadValue(size2);
 
