@@ -443,8 +443,7 @@ std::vector<PtracHistory> Ptrac::ReadHistoriesLegacy(const unsigned int& num) {
   for(unsigned int i=0; i<num; i++) {
     m_handle.peek();
     if( !m_handle.eof() ) {
-      PtracHistory hist = ReadHistory();
-      retval.push_back( hist );
+      retval.emplace_back( ReadHistory() );
     }
     else {
       break;
