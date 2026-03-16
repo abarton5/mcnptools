@@ -12,6 +12,13 @@ option(mcnptools.boost_regex "force use of boost_regex library" ON)
 option(mcnptools.mpi "use mpi capabilities; requires system boost libraries" OFF)
 option(mcnptools.python "build MCNPTools Python bindings" ON)
 option(mcnptools.cpack "build cpack package" OFF)
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+  message(STATUS "Setting build type to 'Release' as none was specified.")
+  set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release" "RelWithDebInfo" "MinSizeRel")
+endif()
+
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -march=native")
 
 get_directory_property(is_subproject PROPERTY PARENT_DIRECTORY)
 
