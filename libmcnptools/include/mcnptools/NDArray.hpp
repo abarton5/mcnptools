@@ -146,7 +146,7 @@ class NDArray {
 
     void Reshape(const NDArrayShaper<T,size_t,N,0>& shape, ordering order=ROWMAJOR) {
       m_order = order;
-      m_shape.empty();
+      m_shape.clear();
       for( size_t i=0; i<N; i++) {
         m_shape.push_back(shape(i));
       }
