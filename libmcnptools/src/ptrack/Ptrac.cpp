@@ -2,7 +2,7 @@
 #include <string>
 #include <format>
 #include "mcnptools/Ptrac.hpp"
-
+#include <iostream>
 #include "mcnptools/StringOps.hpp"
 
 namespace mcnptools {
@@ -313,6 +313,23 @@ void Ptrac::ReadHeader() {
   }
 }
 
+bool is_strictly_ascending_and_unique(const std::vector<int>& v)
+{
+    if (v.size() <= 1) {
+        return true;           // empty or single element → trivially ok
+    }
+
+    for (std::size_t i = 1; i < v.size(); ++i)
+    {
+        if (v[i] <= v[i-1])    // violation: not strictly increasing or duplicate
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 PtracHistory Ptrac::ReadHistory() {
   int size1, size2;
 
@@ -322,13 +339,13 @@ PtracHistory Ptrac::ReadHistory() {
   // read the nps line
   double next_event_type;
   if( m_format == Ptrac::BIN_PTRAC ) ReadValue(size1);
-
+  std::vector<int> keys;
+  std::vector<double> object;
   PtracNps nps;
   // Reuse a buffer for binary reads to avoid repeated heap allocations
   std::vector<double> binary_buffer;
   for(unsigned int i=0; i<m_nument[IDX_NPS]; i++) {
     int64_t tmp;
-
     ReadValue(tmp);
 
     if( ! m_handle.good() )
@@ -374,18 +391,21 @@ PtracHistory Ptrac::ReadHistory() {
     PtracEvent event;
     event.m_type = next_event_type;
     event.m_bnktype = bnk_type;
-  
+    keys.clear();
+    object.clear();
   
     if( m_format == Ptrac::BIN_PTRAC){
       ReadValue(size1);
       binary_buffer.resize(all_data_types.size());
+
       m_handle.read(reinterpret_cast<char*>(binary_buffer.data()), all_data_types.size() * sizeof(double));
       for (size_t i = 0; i < all_data_types.size(); ++i) {
           double val = binary_buffer[i];
           if (all_data_types[i] == Ptrac::NEXT_EVENT_TYPE) {
               next_event_type = val;
           } else {
-              event.m_data.emplace(all_data_types[i], val);
+              keys.push_back(all_data_types[i]);
+              object.push_back(val);
           }
       }
     } 
@@ -420,7 +440,8 @@ PtracHistory Ptrac::ReadHistory() {
             case Ptrac::ENERGY:
             case Ptrac::WEIGHT:
             case Ptrac::TIME:
-              event.m_data.emplace(all_data_types[i], tmp);
+              keys.push_back(all_data_types[i]);
+              object.push_back(tmp);
               break;
           }
         }
@@ -432,7 +453,14 @@ PtracHistory Ptrac::ReadHistory() {
         throw McnpToolsException( "Failed to read binary PTRAC" );
       }
     }
+//    if(is_strictly_ascending_and_unique(keys)==false){
+//       throw McnpToolsException( "Not ascending keys" );
+//    }
+//    for(auto x : keys ) std::cout << x << '\n';
+//    std::cout << "---\n";
+    event.m_data = std::flat_map<int, double>(std::sorted_unique, keys, object);
     hist.m_events.push_back(std::move(event));
+
   }
 
   // make sure to read until end of line if ASCII
